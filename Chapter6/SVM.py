@@ -20,37 +20,66 @@ def loadDataSet(fileName):
 
     return np.array(parameterMatrix), np.array(labelList)
 
-def selectFromRange(lowerBoundary, upperBoundary):
-    randomValue1 = random.randint(lowerBoundary, upperBoundary)
-    randomValue2 = random.randint(lowerBoundary, upperBoundary)
-    while (randomValue2 == randomValue1):
-        randomValue2 = random.randint(lowerBoundary, upperBoundary)
-    return randomValue1, randomValue2
-
-def randomlyGenerateAlpha(lowerBoundary, upperBoundary, numberOfAlpha):
-
-    alpha = np.zeros(numberOfAlpha)
-    for i in range(numberOfAlpha):
-        alpha[i] = random.uniform(lowerBoundary, upperBoundary)
-    return alpha
+def selectAlphaIndex(i, lowerBoundary, upperBoundary):
+    j = random.randint(lowerBoundary, upperBoundary)
+    while (i == j):
+        j = random.randint(lowerBoundary, upperBoundary)
+    return j
 
 
-def limitBoundary(inputValue, lowerBoundary, upperBoundary):
-    if inputValue > upperBoundary:
+
+def clipAlpha(alphaUnclipped, lowerBoundary, upperBoundary):
+    if alphaUnclipped >= upperBoundary:
         return upperBoundary
-    elif inputValue < lowerBoundary:
+    elif alphaUnclipped <= lowerBoundary:
         return lowerBoundary
     else:
-        return inputValue
+        return alphaUnclipped
 
 
-def SMO(dataParameterMatrix, labelList, C, tolerance, maxIteration):
-    N, D = np.shape(dataParameterMatrix)
-    alpha = np.zeros()
-    for iteration in range(maxIteration):
-        i, j = selectFromRange(0, N-1)
-        alpha_i = alpha[i]
-        LAMBDA  = - (np.dot(alpha, labelList.T) - alpha[i] * labelList[i] - alpha[j] * labelList[j])
-        alpha_j = labelList[j] * (LAMBDA - alpha[i] * labelList[i])
+def SMO(dataParameterMatrix, labelList, alphaUpperBoundary, tolerance, maxIteration):
+    x = dataParameterMatrix
+    y = labelList
+    N, D = np.shape(x)
+    alpha = np.zeros(N)
+
+    iteration = 1
+    while iteration <= maxIteration:
+        for i in range(N):
+
+            j = selecAlphaIndex(i, 0, N-1)
+
+            Kii = np.dot(x[i], x[i].T)
+            Kij = np.dot(x[i], x[j].T)
+            Kjj = np.dot(x[j], x[j].T)
+            s = y[i] * y[j]
+            LAMBDA = - (np.sum(alpha * y) - (alpha * y)[i] - (alpha * y)[j])
+
+            mediumMatrix_1 = (alpha * y).reshape(len(alpha * y), 1) * x     # (N, D)
+            mediumMatrix_2 = np.sum(mediumMatrix_1, axis = 0) - mediumMatrix_1[i] - mediumMatrix_1[j]   # (D, )
+
+            Ki = y[i] * np.dot(x[i], mediumMatrix_2.T)
+            Kj = y[j] * np.dot(x[j], mediumMatrix_2.T)
+
+            if y[i] == y[j]:
+                B = y[j] * LAMBDA * Kjj - y[i] * LAMBDA * Kij + Kj - Ki
+                A = s * Kij - 0.5 * Kii - 0.5 * Kjj 
+                L = max(alpha[i] + alpha[j] - alphaUpperBoundary, 0)
+                H = min(alpha[i] + alpha[j], alphaUpperBoundary)
+            else:
+                B = - y[j] * LAMBDA * Kjj - y[i] * LAMBDA * Kij + 2 - Kj - Ki
+                A = - s * Kij - 0.5 * Kii - 0.5 * Kjj
+                L = max(alpha[i] - alpha[j], 0)
+                H = min(alphaUpperBoundary + alpha[i] - alpha[j], alphaUpperBoundary)
+
+            alphaUnclipped = - B / (2 * A)
+            alpha[i] = clipAlpha(alphaUnclipped, L, H)
+
+            if y[i] == y[j]:
+                alpha[j] = y[j] * LAMBDA - alpha[i]
+            else:
+                alpha[j] = y[j] * LAMBDA + alpha[i]
+
+
 
 
