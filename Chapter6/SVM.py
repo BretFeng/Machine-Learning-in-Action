@@ -40,46 +40,52 @@ def clipAlpha(alphaUnclipped, lowerBoundary, upperBoundary):
 def SMO(dataParameterMatrix, labelList, alphaUpperBoundary, tolerance, maxIteration):
     x = dataParameterMatrix
     y = labelList
+    b = 0
     N, D = np.shape(x)
     alpha = np.zeros(N)
 
     iteration = 1
     while iteration <= maxIteration:
+
         for i in range(N):
 
-            j = selecAlphaIndex(i, 0, N-1)
-
-            Kii = np.dot(x[i], x[i].T)
-            Kij = np.dot(x[i], x[j].T)
-            Kjj = np.dot(x[j], x[j].T)
-            s = y[i] * y[j]
-            LAMBDA = - (np.sum(alpha * y) - (alpha * y)[i] - (alpha * y)[j])
-
             mediumMatrix_1 = (alpha * y).reshape(len(alpha * y), 1) * x     # (N, D)
-            mediumMatrix_2 = np.sum(mediumMatrix_1, axis = 0) - mediumMatrix_1[i] - mediumMatrix_1[j]   # (D, )
+            w = np.sum(mediumMatrix_1, axis = 0)    # (D,) this matrix is actually w in formula 21 in SVM.docx
+            predictValue_i = np.dot(w, x[i]) + b    # a scalar
+            error_i = predictValue_i - y[i]
 
-            Ki = y[i] * np.dot(x[i], mediumMatrix_2.T)
-            Kj = y[j] * np.dot(x[j], mediumMatrix_2.T)
+            if error_i * y[i] < -tolerance or error_i * y[i] > tolerance:
+                j = selecAlphaIndex(i, 0, N-1)
 
-            if y[i] == y[j]:
-                B = y[j] * LAMBDA * Kjj - y[i] * LAMBDA * Kij + Kj - Ki
-                A = s * Kij - 0.5 * Kii - 0.5 * Kjj 
-                L = max(alpha[i] + alpha[j] - alphaUpperBoundary, 0)
-                H = min(alpha[i] + alpha[j], alphaUpperBoundary)
-            else:
-                B = - y[j] * LAMBDA * Kjj - y[i] * LAMBDA * Kij + 2 - Kj - Ki
-                A = - s * Kij - 0.5 * Kii - 0.5 * Kjj
-                L = max(alpha[i] - alpha[j], 0)
-                H = min(alphaUpperBoundary + alpha[i] - alpha[j], alphaUpperBoundary)
+                Kii = np.dot(x[i], x[i].T)
+                Kij = np.dot(x[i], x[j].T)
+                Kjj = np.dot(x[j], x[j].T)
+                s = y[i] * y[j]
+                LAMBDA = - (np.sum(alpha * y) - (alpha * y)[i] - (alpha * y)[j])
 
-            alphaUnclipped = - B / (2 * A)
-            alpha[i] = clipAlpha(alphaUnclipped, L, H)
+                mediumMatrix_2 = w - mediumMatrix_1[i] - mediumMatrix_1[j]     # (D, )
 
-            if y[i] == y[j]:
-                alpha[j] = y[j] * LAMBDA - alpha[i]
-            else:
-                alpha[j] = y[j] * LAMBDA + alpha[i]
+                Ki = y[i] * np.dot(x[i], mediumMatrix_2.T)
+                Kj = y[j] * np.dot(x[j], mediumMatrix_2.T)
 
+                if y[i] == y[j]:
+                    B = y[j] * LAMBDA * Kjj - y[i] * LAMBDA * Kij + Kj - Ki
+                    A = s * Kij - 0.5 * Kii - 0.5 * Kjj 
+                    L = max(alpha[i] + alpha[j] - alphaUpperBoundary, 0)
+                    H = min(alpha[i] + alpha[j], alphaUpperBoundary)
+                else:
+                    B = - y[j] * LAMBDA * Kjj - y[i] * LAMBDA * Kij + 2 - Kj - Ki
+                    A = - s * Kij - 0.5 * Kii - 0.5 * Kjj
+                    L = max(alpha[i] - alpha[j], 0)
+                    H = min(alphaUpperBoundary + alpha[i] - alpha[j], alphaUpperBoundary)
+
+                alphaUnclipped = - B / (2 * A)
+                alpha[i] = clipAlpha(alphaUnclipped, L, H)
+
+                if y[i] == y[j]:
+                    alpha[j] = y[j] * LAMBDA - alpha[i]
+                else:
+                    alpha[j] = y[j] * LAMBDA + alpha[i]
 
 
 
