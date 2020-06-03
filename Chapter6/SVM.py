@@ -20,10 +20,10 @@ def loadDataSet(fileName):
 
     return np.array(parameterMatrix), np.array(labelList)
 
-def selectAlphaIndex(i, lowerBoundary, upperBoundary):
-    j = random.randint(lowerBoundary, upperBoundary)
+def selectAlphaIndex(i, IdxLowerBoundary, IdxUpperBoundary):
+    j = random.randint(IdxLowerBoundary, IdxUpperBoundary)
     while (i == j):
-        j = random.randint(lowerBoundary, upperBoundary)
+        j = random.randint(IdxLowerBoundary, IdxUpperBoundary)
     return j
 
 
@@ -55,6 +55,7 @@ def SMO(dataParameterMatrix, labelList, alphaUpperBoundary, tolerance, maxIterat
             error_i = predictValue_i - y[i]
 
             if error_i * y[i] < -tolerance or error_i * y[i] > tolerance:
+
                 j = selecAlphaIndex(i, 0, N-1)
 
                 Kii = np.dot(x[i], x[i].T)
@@ -79,8 +80,14 @@ def SMO(dataParameterMatrix, labelList, alphaUpperBoundary, tolerance, maxIterat
                     L = max(alpha[i] - alpha[j], 0)
                     H = min(alphaUpperBoundary + alpha[i] - alpha[j], alphaUpperBoundary)
 
-                alphaUnclipped = - B / (2 * A)
-                alpha[i] = clipAlpha(alphaUnclipped, L, H)
+                if A != 0:
+                    alphaUnclipped = - B / (2 * A)
+                    alpha[i] = clipAlpha(alphaUnclipped, L, H)
+                else:
+                    if B > 0:
+                        alpha[i] = H
+                    else:
+                        alpha[i] = L
 
                 if y[i] == y[j]:
                     alpha[j] = y[j] * LAMBDA - alpha[i]
