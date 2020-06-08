@@ -94,5 +94,14 @@ def SMO(dataParameterMatrix, labelList, alphaUpperBoundary, tolerance, maxIterat
                 else:
                     alpha[j] = y[j] * LAMBDA + alpha[i]
 
+                alphaPairsChange += 1
+
+        if alphaPairsChange == 0:
+            iteration += 1
+        else:
+            iteration = 0
+
+    b = 1
+
 
 
