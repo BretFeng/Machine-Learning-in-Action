@@ -36,6 +36,9 @@ def clipAlpha(alphaUnclipped, lowerBoundary, upperBoundary):
     else:
         return alphaUnclipped
 
+def calculate_b():
+    
+
 
 def SMO(dataParameterMatrix, labelList, alphaUpperBoundary, tolerance, maxIteration):
     x = dataParameterMatrix
@@ -44,9 +47,11 @@ def SMO(dataParameterMatrix, labelList, alphaUpperBoundary, tolerance, maxIterat
     N, D = np.shape(x)
     alpha = np.zeros(N)
 
-    iteration = 1
-    while iteration <= maxIteration:
+    iteration = 0
+    while iteration < maxIteration:
 
+
+        alphaPairsChange = 0
         for i in range(N):
 
             mediumMatrix_1 = (alpha * y).reshape(len(alpha * y), 1) * x     # (N, D)
@@ -54,7 +59,9 @@ def SMO(dataParameterMatrix, labelList, alphaUpperBoundary, tolerance, maxIterat
             predictValue_i = np.dot(w, x[i]) + b    # a scalar
             error_i = predictValue_i - y[i]
 
-            if error_i * y[i] < -tolerance or error_i * y[i] > tolerance:
+            if (error_i * y[i] < -tolerance and alpha[i] < alphaUpperBoundary) or (error_i * y[i] > tolerance and alpha[i] > 0):
+            #   error_i * y[i] = yi * (wT * xi + b) - 1   #
+            #   so if it is 0, means it is support vector #
 
                 j = selecAlphaIndex(i, 0, N-1)
 
@@ -101,7 +108,6 @@ def SMO(dataParameterMatrix, labelList, alphaUpperBoundary, tolerance, maxIterat
         else:
             iteration = 0
 
-    b = 1
 
 
 
